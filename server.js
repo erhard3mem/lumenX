@@ -49,8 +49,8 @@ function getRandomElementOfEnum(e) {
 
 /*******************************************************************************************************/
 
-await input('"\x1b[37mHow many players are playing? (default is 3) ').then(answer => {
-    if(answer && !isNaN(answer) && (parseInt(answer) < 3 || parseInt(answer) > 10)) {
+await input('"\x1b[37mHow many players are playing? (default is 3, max is 5) ').then(answer => {
+    if(answer && !isNaN(answer) && (parseInt(answer) < 3 || parseInt(answer) > 5)) {
         players = 3;
     } else if(answer && !isNaN(answer)) {
         players = parseInt(answer);
@@ -108,7 +108,7 @@ const guesses = [];
 console.log('"\x1b[37mYou are player 0.');
 for (let g = 0; g < games; g++) 
 {
-    console.log("\x1b[37mGAME:",g,'STATS OVERVIEW:',playerPoints);
+    console.log("\x1b[37mGAME:",g+1,"/",games)//,'STATS OVERVIEW:',playerPoints);
     let lastRoundWinner = -1;
     for (let i = 0; i < rounds; i++) {
         
@@ -191,10 +191,9 @@ for (let g = 0; g < games; g++)
 
         console.log(`\x1b[37mCard played has value ${initCardPlayed[0].value} and color ${Object.keys(Color).find(key => Color[key] === initCardPlayed[0].color)}.`);
 
+        let cardPlayedCounter = 0;
         let winnerPlayer = playerStarts;
-        let winnerValue = initCardPlayed[0].value;
-        let winnerColor = initCardPlayed[0].color;
-        let yellowPlayed = false;
+        let winnerCard = initCardPlayed[0];
 
         const playersArray = Array.from({ length: players }, (_, i) => i);
         playersArray.splice(playersArray.indexOf(playerStarts), 1);
@@ -241,8 +240,8 @@ for (let g = 0; g < games; g++)
                         continue; // no such card, re-prompt
                     }
 
-                    if (card.color !== winnerColor) {
-                        const hasWinnerColor = playerCardsForRound.some(x => x.color === winnerColor);
+                    if (card.color !== winnerCard.color) {
+                        const hasWinnerColor = playerCardsForRound.some(x => x.color === winnerCard.color);
                         if (!hasWinnerColor) {
                             cardPlayed = num;
                         } else {
@@ -255,7 +254,7 @@ for (let g = 0; g < games; g++)
                     cardPlayedCard = playerCardsForRound[cardPlayed - 1];
                 }
 
-                console.log(`\x1b[37mYou played card ${cardPlayed} with value ${playerCardsForRound[cardPlayed - 1].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[cardPlayed - 1].color)}.`);              
+                console.log(`\x1b[37mYou played card with value ${playerCardsForRound[cardPlayed - 1].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[cardPlayed - 1].color)}.`);              
                 cardPlayed = structuredClone(cardPlayed);                
                 orderedCards.splice(orderedCards.indexOf(playerCardsForRound[cardPlayed - 1]), 1);
                 
@@ -271,7 +270,7 @@ for (let g = 0; g < games; g++)
                         cardPlayedCard = playerCardsForRound[cardPlayed - 1];
                         cardPlayed = structuredClone(cardPlayed);
                         orderedCards.splice(orderedCards.indexOf(playerCardsForRound[k]), 1);  
-                        console.log(`\x1b[37mPlayer ${j} played card ${cardPlayed} with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                        
+                        console.log(`\x1b[37mPlayer ${j} played card with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                        
                         usesYellow = false;
                         break;                        
                     } else {
@@ -285,7 +284,7 @@ for (let g = 0; g < games; g++)
                             cardPlayedCard = playerCardsForRound[cardPlayed - 1];
                             cardPlayed = structuredClone(cardPlayed);
                             orderedCards.splice(orderedCards.indexOf(playerCardsForRound[k]), 1);  
-                            console.log(`\x1b[37mPlayer ${j} played card ${cardPlayed} with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                                                    
+                            console.log(`\x1b[37mPlayer ${j} played card with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                                                    
                             noYellowGiven = false;
                             break;                        
                         } else {
@@ -297,37 +296,47 @@ for (let g = 0; g < games; g++)
                     cardPlayed = randomInt(0,playerCardsForRound.length-1);
                     cardPlayedCard = playerCardsForRound[cardPlayed];                    
                     orderedCards.splice(orderedCards.indexOf(cardPlayedCard), 1);  
-                    console.log(`\x1b[37mPlayer ${j} played card ${cardPlayed} with value ${cardPlayedCard.value} and color ${Object.keys(Color).find(key => Color[key] === cardPlayedCard.color)}.`);                                                                                
+                    console.log(`\x1b[37mPlayer ${j} played card with value ${cardPlayedCard.value} and color ${Object.keys(Color).find(key => Color[key] === cardPlayedCard.color)}.`);                                                                                
                 }
             } 
 
-     //       console.log("\x1b[37mcardPlayed =",cardPlayed);
-      //      console.log(cardPlayedCard);
-
-            if( yellowPlayed == false && (winnerValue < cardPlayedCard.value && winnerColor == cardPlayedCard.color)) {
-            //   winnerColor = cardPlayedCard.color;
-                winnerValue = cardPlayedCard.value;
-                winnerPlayer = structuredClone(j);
-            } else if (winnerValue < cardPlayedCard.value && cardPlayedCard.color == 0)   {
-                winnerValue = cardPlayedCard.value;
-                winnerPlayer = structuredClone(j);  
-                yellowPlayed = true;  
-            } else {
-                //
+            function isBiggerThan(card1, card2) {
+                if(card1.color == 0 && card2.color == 0) {
+                    return card1.value > card2.value;
+                }
+                if(card1.color == card2.color) {
+                    return card1.value > card2.value;
+                }
+                if(card1.color == 0 && card2.color != 0) {
+                    return true;
+                }
+                return false;
             }
+
+            //console.log("\x1b[37mbefore check winnerplayer=",winnerPlayer,"winnercard=",winnerCard)
+
+
+            if ( isBiggerThan(cardPlayedCard,winnerCard) ) {
+                winnerPlayer = structuredClone(j); 
+                winnerCard = structuredClone(cardPlayedCard);                 
+            }
+
+            //console.log("\x1b[37mafter check winnerplayer=",winnerPlayer,"winnercard=",winnerCard)
+
+            cardPlayedCounter += 1;
             
         }
-        console.log(`\x1b[37mWinner in this round is Player ${winnerPlayer}.`);
+        console.log(`\x1b[31mWinner in this round is Player ${winnerPlayer}.\x1b[37m`);
 
         lastRoundWinner = winnerPlayer;
         
         const pw = playerTricks.find((x) => x.player === winnerPlayer);
-        console.log(pw);
+       // console.log(pw);
         if (!pw) {
             playerTricks.push({ player: winnerPlayer, tricks: 1 });
-            console.log('WINNER PUSHED');
+            //console.log('WINNER PUSHED');
         } else {
-            console.log('WINNER COUNTED');
+            //console.log('WINNER COUNTED');
             pw.tricks += 1;
         }
 
@@ -344,7 +353,7 @@ for (let g = 0; g < games; g++)
         const p = playerTricks.find((x) => x.player === gu.player);
         if(p) {
             const diff = gu.guess - p.tricks;
-            console.log(diff)
+            //console.log(diff)
             let m = 10;
             if(g == 1)
                 m = 20;
