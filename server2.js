@@ -42,23 +42,6 @@ app.post('/init', (req, res) => {
   res.json({ status: 'ok', message: JSON.stringify(orderedCards) });
 });
 
-app.post('/setPlayerGuesses', (req, res) => {
-    if(orderedCards == undefined || !orderedCards) 
-        return res.status(400).json({ status: 'error', message: 'game not initialized' });
-
-  playerGuesses = Number(req.body.guesses);
-
-  if (!Number.isInteger(playerGuesses) || playerGuesses < 1 || playerCount == 0) {
-    return res.status(400).json({ status: 'error', message: 'playerGuesses must be a positive integer' });
-  }
-
-  const playerStartsOrStartingCard = playGame(playerCount);
-
-  console.log(playerStartsOrStartingCard)
-   
-  res.json({ status: 'ok', message: JSON.stringify({playerStartsOrStartingCard:playerStartsOrStartingCard}) });
-});
-
 
 // --- 404 handler ---
 app.use((req, res) => {
