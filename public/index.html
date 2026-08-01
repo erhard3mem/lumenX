@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Lumen</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='main.css'>
+    <style>
+        body {
+            width:900px;
+            margin: 0 auto;
+            
+        }
+        #deck {
+            display: block;
+            clear:both;
+            margin-top:50px;
+            margin-right:auto;
+            margin-left:auto;            
+        }
+        .card {
+            float:left;
+            margin:5px;
+            padding:20px;
+            height:80px;
+            width:30px;
+        }
+        #cardTooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        #start {
+            margin:10px;
+        }
+        #container {
+            width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;   /* centers #turn and #deck horizontally, stacked vertically */
+        }
+
+        #turn {
+            display: flex;
+            justify-content: center;
+        }
+
+        #deck {
+            display: inline-block;   /* shrink-to-fit so centering has something to act on */
+            text-align: left;        /* keep card content left-aligned inside the centered block */
+            margin: 0 auto;
+        }
+        #status1{
+            text-align: center;
+        }
+        #status2 {
+            display: none;
+            background-color: grey;
+            padding:15px;
+            margin:0 auto;
+        }
+         .bar-container {
+    width: 300px;
+    height: 20px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  .bar-fill {
+    width: 0%;
+    height: 100%;
+    background: #3b82f6;
+    transition: width 3s linear;
+  }
+    </style>
+    <script src='https://code.jquery.com/jquery-4.0.0.min.js'></script>
+</head>
+<body>
+    <h1 id="header">LUMEN</h1>
+    <button id="start" onclick="init();">start</button><input type="number" id="playerCount" min="3" max="5" value="3" />
+
+       <h3 id="status1"></h1>
+        <h3 id="status2"></h1> 
+
+    <div id="container">
+        <table id="playerPoints" border="1" style="display:none;margin:0 auto; margin-top:20px; margin-bottom:20px">
+            <tr>
+                <th>Player</th>
+                <th>Points</th>
+            </tr>
+        </table>
+        <div id="turn"></div> 
+        <div class="bar-container">
+  <div class="bar-fill" id="bar"></div>
+</div>
+        <div id="deck"></div>
+    </div>  
+    
+    
+
+    <dialog id="guessPopup">
+        <form method="dialog">
+            <label for="numberInput">Guess your number of tricks:</label><br>
+            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
+            <button type="submit" value="ok">OK</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+        </form>
+    </dialog>
+
+    <dialog id="cardSelPopup">
+        <form method="dialog">
+            <label for="numberInput">Select a card to play:</label><br>
+            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
+            <button type="submit" value="ok">OK</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+        </form>
+    </dialog>
+
+
+    <script>
+        const Color = { "Yellow": 0, "Green": 1, "Blue": 2, "Red": 3, "Purple": 4 };        
+        const colorMap = ["yellow", "green", "blue", "red", "purple"];
+        const playerCards = [];
+        const playerPoints = [];
+        const playerTricks = [];
+
+        (async ()=> {})();
+
+        function randomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function waitForCardSelection() {
+            return new Promise((resolve) => {
+                // Player 0's cards are the ones inside the "Player 0" section.
+                // Since there's no wrapping container per player, we select by
+                // proximity: all .card elements that come before the first "Player 1" h3.
+                const $player0Cards = $("#deck h3:contains('Player 0')")
+                .nextUntil("h3", ".card");
+
+                $player0Cards.css("cursor", "pointer"); // visual affordance
+
+                $player0Cards.one("click", function () {
+                const index = Number($(this).attr("data-index"));
+                $player0Cards.off("click").css("cursor", "");
+                resolve(index);
+                });
+            });
+        }
+
+        function attachHoverIndex() {
+            const $tooltip = $("<div>", { id: "cardTooltip" }).appendTo("body");
+
+            // group cards by the nearest preceding <h3>
+            let currentGroup = [];
+            $("#deck").children().each(function () {
+                if ($(this).is("h3")) {
+                currentGroup = [];
+                } else if ($(this).hasClass("card")) {
+                currentGroup.push(this);
+                const index = currentGroup.length; // 1-based within this player's group
+                $(this).attr("data-index", index);
+                }
+            });
+
+            $(".card")
+                .on("mouseenter", function (e) {
+                //$tooltip.text($(this).attr("data-index")).show();
+                })
+                .on("mousemove", function (e) {
+                //$tooltip.css({ left: e.pageX + 12, top: e.pageY + 12 });
+                })
+                .on("mouseleave", function () {
+                //$tooltip.hide();
+                });
+            }
+            
+    
+        async function init() {
+            $("status1").text();
+            $("status2").text();
+            const playerCount = Number($("#playerCount").val());
+            $("#playerCount").hide();
+            $("button#start").text("re-start");
+            $('#playerPoints').hide();
+            $(".bar-container").hide();
+            $("#status1").show();
+
+            let cardsText  = await fetch("/init", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ playerCount })
+            })
+                .then(res => res.json())
+                .then(data => data.message);  
+                
+            document.players = playerCount;
+                
+            console.log(cardsText)
+            const cards = JSON.parse(cardsText)
+            await paintCards(cards,true);
+            
+        }
+
+        async function paintCards(cards,sgp=false) {
+
+            const $deck = $("#deck");
+            $deck.empty(); // clear previous cards before repainting
+
+            let currentPlayer = 0;
+            let playerDescription = false;
+            cards.forEach((card,index) => {                
+
+                 if(card.player != currentPlayer) {
+                    $deck.append("<div style='clear:both' />");
+                    currentPlayer = card.player;
+                    playerDescription = false;
+                }
+
+                if(!playerDescription) {
+                    $deck.append("<h3>Player "+currentPlayer+"</h3>"); 
+                    const cg = document.guesses!=undefined ? document.guesses[currentPlayer].guess : "-";
+                //    debugger
+                    $deck.append("<div class='guessBox' data-player='"+currentPlayer+"'>Guess: "+cg+"</div>");
+                    playerDescription = true;
+                } 
+
+                const bgColor = colorMap[card.color] || "gray";
+                const isHidden = card.player === 0;
+
+                const $card = $("<div>", {
+                    class: "card" + (isHidden ? " card-hidden" : ""),
+                    style: `background-color:${bgColor}`,
+                    text: isHidden ? "" : card.value
+                });
+                $card.attr("data-player",currentPlayer);
+                
+                $card.attr("data-index",index%11+1)
+                $deck.append($card);
+                
+            });
+            document.cards = cards;
+            attachHoverIndex();      
+            
+            if(sgp) 
+               await showGuessPopup();
+        }
+
+
+
+        async function showCardSelectionPopup() {
+                return new Promise((resolve) => {
+                    const $popup = $("#cardSelPopup");
+                    const $input = $("#cardSelPopup #numberInput");
+
+                    $input.val("");
+                    $popup[0].showModal();
+                    $input.trigger("focus");
+
+                    // .off() first to avoid stacking duplicate handlers on repeated calls
+                    $("#cardSelPopup #cancelBtn").off("click").on("click", () => {
+                    $popup[0].close();
+                    });
+
+                    $popup.off("close").on("close", () => {
+                    if ($popup[0].returnValue === "ok") {
+                        const number = Number($input.val());
+                        resolve(number);
+                    } else {
+                        resolve(null); // cancelled — decide what makes sense for your flow
+                    }
+                    });
+                });
+                }
+
+            async function showGuessPopup() {
+
+                const $popup = $("#guessPopup");
+                const $input = $("#guessPopup #numberInput");
+
+                $input.val("");           // reset on open
+                $popup[0].showModal();    // native modal behavior + backdrop
+                $input.trigger("focus");
+                
+                $("#guessPopup #cancelBtn").on("click", () => {
+                    $popup[0].close();
+                });
+
+                $popup.on("close", () => {
+                    if ($popup[0].returnValue === "ok") {
+                        const number = Number($input.val());
+                        console.log("User entered:", number);   
+                        (async ()=> {
+                            $(".guessBox[data-player='0']").text("Guess: "+number);                   
+                            const games = 4;
+                            const rounds = 10; // 10 = default
+                            const guesses = [];
+                            const players = document.players;
+                            const orderedCards = document.cards;
+                            for (let g = 0; g < games; g++) 
+                            {
+                                let lastRoundWinner = -1;
+                                for (let i = 0; i < rounds; i++) {                                   
+
+                                    console.log("round = ",i);
+                                    
+                                    for (let j = 0; j < players; j++) {
+                                        const playerCardsForRound = orderedCards.filter(card => card.player === j);                                       
+                                        for(let x = 0; x < playerCardsForRound.length; x++) {
+                                            playerCardsForRound[x].index = x                                            
+                                        }
+                                    }                                  
+                                    
+                                    
+                                    if(i==0) {                              
+                                        guesses.push({ player: 0, guess: number });
+                                        for (let j = 1; j < players; j++) {
+                                            let computerGuess = randomInt(0, 5); 
+                                            $(".guessBox[data-player='"+j+"']").text("Guess: "+computerGuess);                                        
+                                            guesses.push({ player: j, guess: computerGuess });
+                                        }                                        
+                                    }
+                                    document.guesses = guesses;
+
+                                    const playerStarts = lastRoundWinner > -1 ? lastRoundWinner : randomInt(0, players - 1);
+                                    if(playerStarts == 0)
+                                        $("#status1").text("You start.");
+                                    else 
+                                        $("#status1").text("");
+                                    console.log("playerStarts:",playerStarts)
+
+                                    let startCard = 0;
+                                    if (playerStarts === 0) {
+                                        //startCard = await showCardSelectionPopup();
+                                        startCard = await waitForCardSelection();                                                                              
+                                    } else {        
+                                        startCard = randomInt(1, orderedCards.filter(card => card.player === playerStarts).length);
+                                    }
+                                   
+                                    
+                                   // $("#status1").text("Player "+playerStarts+" begins... with card "+startCard);
+                                    $(".card[data-player='"+playerStarts+"'][data-index="+startCard+"]").css("border","5px solid black");
+                                    console.log("startCard:",startCard);
+
+                                    
+
+
+                                    /***************************************************/
+
+                                    let initCardPlayed = orderedCards.filter((card, index) => card.player == playerStarts && card.index == startCard-1);
+                                    let initCardPainted = false;
+
+                                  
+
+                                    // remove played card from orderedCards
+                                                       
+                                    orderedCards.splice(orderedCards.indexOf(initCardPlayed[0]), 1);
+                                    
+                                    console.log("initCardPlayed:",initCardPlayed[0]);
+
+                                    let cardPlayedCounter = 0;
+                                    let winnerPlayer = playerStarts;
+                                    let winnerCard = initCardPlayed[0];
+
+                                    const playersArray = Array.from({ length: players }, (_, i) => i);
+                                    playersArray.splice(playersArray.indexOf(playerStarts), 1);
+
+
+                                    for(let j of playersArray) {     
+                                        let cardPlayed = -1;
+                                        let cardPlayedCard;
+                                        if (j == 0) {            
+                                            const playerCardsForRound = orderedCards.filter(card => card.player === 0);
+                                       
+                                            while (cardPlayed === -1) {
+                                            //    const answer = await showCardSelectionPopup();
+                                                const answer = await waitForCardSelection();                                                
+                                                const num = parseInt(answer);
+
+                                                if (!isNaN(num) && (num < 1 || num > playerCardsForRound.length)) {
+                                                    continue; // loop back to the top, re-prompt
+                                                }
+
+                                                const card = playerCardsForRound[num - 1];
+
+                                                if (!card) {
+                                                    continue; // no such card, re-prompt
+                                                }
+
+                                                if (card.color !== winnerCard.color) {
+                                                    const hasWinnerColor = playerCardsForRound.some(x => x.color === winnerCard.color);
+                                                    if (!hasWinnerColor) {
+                                                        cardPlayed = num;
+                                                    } else {
+                                                        continue; // this is your "here" — loop back instead
+                                                    }
+                                                } else {
+                                                    cardPlayed = num;
+                                                }
+                                                cardPlayedCard = playerCardsForRound[cardPlayed - 1];
+                                            }
+
+                                            console.log(`You played card with value ${playerCardsForRound[cardPlayed - 1].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[cardPlayed - 1].color)}.`);              
+                                            cardPlayed = structuredClone(cardPlayed);                
+                                            orderedCards.splice(orderedCards.indexOf(playerCardsForRound[cardPlayed - 1]), 1);
+                                            
+                                        } else {            
+                                            // select a card to play based on the initial card played and the player's cards
+                                            const playerCardsForRound = orderedCards.filter(card => card.player == j);    
+                                            //console.log(playerCardsForRound)        
+                                            let usesYellow = initCardPlayed[0].color == 0 ? false : true;
+                                            let noYellowGiven = false;
+                                            for (let k = 0; k < playerCardsForRound.length; k++) {
+                                                if (playerCardsForRound[k].color == initCardPlayed[0].color) {                    
+                                                    cardPlayed = playerCardsForRound[k].index + 1;
+                                                    cardPlayedCard = playerCardsForRound[cardPlayed - 1];
+                                                    cardPlayed = structuredClone(cardPlayed);
+                                                    orderedCards.splice(orderedCards.indexOf(playerCardsForRound[k]), 1);  
+                                                    console.log(`\x1b[37mPlayer ${j} played card with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                        
+                                                    usesYellow = false;
+                                                    break;                        
+                                                } else {
+                                                    usesYellow = true;
+                                                }
+                                            }
+                                            if(usesYellow) {
+                                                for (let k = 0; k < playerCardsForRound.length; k++) {
+                                                    if (playerCardsForRound[k].color == 0) {                    
+                                                        cardPlayed = playerCardsForRound[k].index + 1;
+                                                        cardPlayedCard = playerCardsForRound[cardPlayed - 1];
+                                                        cardPlayed = structuredClone(cardPlayed);
+                                                        orderedCards.splice(orderedCards.indexOf(playerCardsForRound[k]), 1);  
+                                                        console.log(`\x1b[37mPlayer ${j} played card with value ${playerCardsForRound[k].value} and color ${Object.keys(Color).find(key => Color[key] === playerCardsForRound[k].color)}.`);                                                    
+                                                        noYellowGiven = false;
+                                                        break;                        
+                                                    } else {
+                                                        noYellowGiven = true;
+                                                    }
+                                                }
+                                            } 
+                                            if(noYellowGiven) {
+                                                cardPlayed = randomInt(0,playerCardsForRound.length-1);
+                                                cardPlayedCard = playerCardsForRound[cardPlayed];                    
+                                                orderedCards.splice(orderedCards.indexOf(cardPlayedCard), 1);  
+                                                console.log(`\x1b[37mPlayer ${j} played card with value ${cardPlayedCard.value} and color ${Object.keys(Color).find(key => Color[key] === cardPlayedCard.color)}.`);                                                                                
+                                            }
+                                        }
+
+                                        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+
+                                        if(!initCardPainted) {
+                                            console.log("painting initCard");
+                                            initCardPainted = true;
+                                            const bgColor = colorMap[initCardPlayed[0].color];
+                                            const $card = $("<div>", {
+                                                class: "card",
+                                                style: `background-color:${bgColor}; font-size:13px`,
+                                                text: `Player ${initCardPlayed[0].player} value ${initCardPlayed[0].value}`
+                                            });
+                                            $("#turn").append($card) 
+                                            console.log($card);                          
+                                        }
+                                            console.log("painting cardPlayed");
+                                            const bgColor = colorMap[cardPlayedCard.color];
+                                            const $card = $("<div>", {
+                                                class: "card",
+                                                style: `background-color:${bgColor}; font-size:13px`,
+                                                text: `Player ${cardPlayedCard.player} value ${cardPlayedCard.value}`
+                                            });
+                                            $("#turn").append($card) 
+                                            console.log($card);
+
+                                            $(".bar-container").show();
+
+
+                                            function startLoading() {
+                                                const bar = document.getElementById('bar');
+
+                                                // 1. Kill the transition and reset width instantly
+                                                bar.style.transition = 'none';
+                                                bar.style.width = '0%';
+
+                                                // 2. Force the browser to apply that reset before continuing
+                                                //    (reading offsetWidth forces a reflow)
+                                                void bar.offsetWidth;
+
+                                                // 3. Restore the transition and trigger the fill
+                                                bar.style.transition = 'width 3s linear';
+                                                bar.style.width = '100%';
+                                            }
+
+                                            startLoading();
+
+                                            (async()=> {
+                                                await delay(3000);
+                                                $("#turn").empty();
+
+                                                $(".bar-container").hide();
+                                            })();
+
+                                        
+                                        
+
+                                        paintCards(orderedCards,false);
+
+                                        function isBiggerThan(card1, card2) {
+                                            if(card1.color == 0 && card2.color == 0) {
+                                                return card1.value > card2.value;
+                                            }
+                                            if(card1.color == card2.color) {
+                                                return card1.value > card2.value;
+                                            }
+                                            if(card1.color == 0 && card2.color != 0) {
+                                                return true;
+                                            }
+                                            return false;
+                                        }                                       
+
+                                        if ( isBiggerThan(cardPlayedCard,winnerCard) ) {
+                                            winnerPlayer = structuredClone(j); 
+                                            winnerCard = structuredClone(cardPlayedCard);                 
+                                        }
+
+                                        
+                                     
+                                        cardPlayedCounter += 1;
+                                        
+                                    }
+
+                                    //$("#turn").insertAfter("<hr />");
+                                    //$("#status2").show();
+                                    //$("#status2").text("Winner in this round is "+winnerPlayer);
+                                    console.log(`\x1b[31mWinner in this round is Player ${winnerPlayer}.\x1b[37m`);
+
+                                    lastRoundWinner = winnerPlayer;
+                                    
+                                    const pw = playerTricks.find((x) => x.player === winnerPlayer);
+                                // console.log(pw);
+                                    if (!pw) {
+                                        playerTricks.push({ player: winnerPlayer, tricks: 1 });
+                                        //console.log('WINNER PUSHED');
+                                    } else {
+                                        //console.log('WINNER COUNTED');
+                                        pw.tricks += 1;
+                                    }
+
+                                    //let textScore = "";
+
+                                    playerTricks.forEach(x=> {
+                                      //  textScore+=" Player "+x.player+" ("+x.tricks +" tricks), ";
+                                        let tricks = "";
+                                        for(let i = 0; i < x.tricks; i++) {
+                                            tricks += "🂠";
+                                        }
+                                        $(`h3:contains('Player ${x.player}')`).text("Player "+x.player+" "+tricks);                                        
+                                    });
+
+                                   // $("#status2").text("Score = "+textScore);
+                                    console.log(playerTricks);
+                                    
+
+                                    /*************************************************************/
+
+                                }
+
+
+                                $("button#start").text("continue");
+                                //let textScore = "";
+                                let content = ""
+                                // logic for calculating points
+                                for (let gu of guesses) {
+                                    const p = playerTricks.find((x) => x.player === gu.player);
+                                    if(p) {
+                                        const diff = gu.guess - p.tricks;
+                                        //console.log(diff)
+                                        let m = 10;
+                                        if(g == 1)
+                                            m = 20;
+                                        if(g == 2)
+                                            m = 30;
+                                        if(g == 3)
+                                            m = 40;
+                                        let points = 0;
+                                        if(diff == 0) {
+                                            points = p.tricks * m;
+                                        } else if(diff < 0) {
+                                            points = p.tricks * m - (diff*(-1)*5);
+                                        } else if(diff > 0) {
+                                            points = p.tricks * m - (diff*5);
+                                        }
+                                       // textScore  += " Player "+gu.player + " collected "+points +" points!";
+                                        content += '<tr><td>' + 'Player ' +  gu.player + '</td><td>Points '+points+'</td></tr>';
+                                        console.log("\x1b[37mPlayer "+gu.player + " collected "+points +" points!");       
+                                        
+                                        const pp = playerPoints.find((x) => x.player === gu.player);
+                                        if (!pp) {
+                                            playerPoints.push({ player: gu.player, points: points });
+                                        } else {
+                                            pp.points += points;
+                                        }                        
+                                    } else {
+                                        const diff = gu.guess;
+                                        console.log(diff)           
+                                        let points = 0;
+                                        if(diff == 0) {
+                                            //points = gu.guess * m;
+                                        } else if(diff < 0) {
+                                            points = (diff*(-1)*5);
+                                        } else if(diff > 0) {
+                                            points = -(diff*5);
+                                        }
+                                        //textScore  += " Player "+gu.player + " collected "+points +" points!";
+                                        content += '<tr><td>' + 'Player ' +  gu.player + '</td><td>Points '+points+'</td></tr>';
+                                        console.log("\x1b[37mPlayer "+gu.player + " collected "+points +" points!");       
+                                        
+                                        const pp = playerPoints.find((x) => x.player === gu.player);
+                                        if (!pp) {
+                                            playerPoints.push({ player: gu.player, points: points });
+                                        } else {
+                                            pp.points += points;
+                                        }                        
+                                    }
+                                }
+                                $("#status1").hide();
+                                $('#playerPoints').append(content);    
+                                $('#playerPoints').show();
+
+                            }
+                        })();
+                    }
+                });
+            }
+
+       
+
+    </script>
+    
+    
+</body>
+</html>
