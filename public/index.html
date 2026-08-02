@@ -3,7 +3,7 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Lumen</title>
+    <title>LumenX</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link rel='stylesheet' type='text/css' media='screen' href='main.css'>
     <style>
@@ -66,25 +66,43 @@
             padding:15px;
             margin:0 auto;
         }
-         .bar-container {
-    width: 300px;
-    height: 20px;
-    background: #eee;
-    border-radius: 10px;
-    overflow: hidden;
-    display: none;
-  }
-  .bar-fill {
-    width: 0%;
-    height: 100%;
-    background: #3b82f6;
-    transition: width 3s linear;
-  }
+        .bar-container {
+            width: 300px;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        .bar-fill {
+            width: 0%;
+            height: 100%;
+            background: #3b82f6;
+            transition: width 3s linear;
+        }
+        #guessPopup {
+            margin:30px auto;            
+            top:0px;
+        }
     </style>
     <script src='https://code.jquery.com/jquery-4.0.0.min.js'></script>
 </head>
 <body>
-    <h1 id="header">LUMEN</h1>
+
+
+    <dialog id="guessPopup">
+        <form method="dialog">
+            <label for="numberInput">Guess your number of tricks:</label><br>
+            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
+            <button type="submit" value="ok">OK</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+        </form>
+    </dialog>
+
+    <h1 id="header">LUMENX</h1>
+
+
+
     <button id="start" onclick="init();">start</button><input type="number" id="playerCount" min="3" max="5" value="3" />
 
        <h3 id="status1"></h1>
@@ -105,24 +123,6 @@
     </div>  
     
     
-
-    <dialog id="guessPopup">
-        <form method="dialog">
-            <label for="numberInput">Guess your number of tricks:</label><br>
-            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
-            <button type="submit" value="ok">OK</button>
-            <button type="button" id="cancelBtn">Cancel</button>
-        </form>
-    </dialog>
-
-    <dialog id="cardSelPopup">
-        <form method="dialog">
-            <label for="numberInput">Select a card to play:</label><br>
-            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
-            <button type="submit" value="ok">OK</button>
-            <button type="button" id="cancelBtn">Cancel</button>
-        </form>
-    </dialog>
 
 
     <script>
