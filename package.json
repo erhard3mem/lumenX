@@ -1,0 +1,25 @@
+{
+  "name": "lumen",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/erhard3mem/lumendigital#readme",
+  "bugs": {
+    "url": "https://github.com/erhard3mem/lumendigital/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erhard3mem/lumendigital.git"
+  },
+  "license": "ISC",
+  "author": "Erhard Einsiedler",
+  "type": "module",
+  "main": "server2.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server2.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
