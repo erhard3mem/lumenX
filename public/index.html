@@ -207,6 +207,10 @@
             
     
         async function init() {
+
+            playerCards.length = 0;
+            playerTricks.length = 0;
+
             $("status1").text();
             $("status2").text();
             const playerCount = Number($("#playerCount").val());
@@ -312,11 +316,11 @@
                 $popup[0].showModal();    // native modal behavior + backdrop
                 $input.trigger("focus");
                 
-                $("#guessPopup #cancelBtn").on("click", () => {
+                $("#guessPopup #cancelBtn").off("click").on("click", () => {
                     $popup[0].close();
                 });
 
-                $popup.on("close", () => {
+                $popup.off("close").on("close", () => {
                     if ($popup[0].returnValue === "ok") {
                         const number = Number($input.val());
                         console.log("User entered:", number);   
