@@ -122,8 +122,12 @@
     <h1 id="header">LUMENX</h1>
 
 
-
-    <button id="start" onclick="init();">start</button><input type="number" id="playerCount" min="3" max="5" value="3" />
+    <button id="info" onclick="alert(
+        'Every player has 10 cards containing randomly selected cards from 6 colors with value 1 to 12. Before the 1st round starts, every player has to guess how many tricks he is making, without seeing the values of the own cards. Player 2 made the first trick, so it’s his round and choice. He now plays card 6, red with value 8. I have to stick to the played color and select one card from my deck (there is only one choice left - it’s card 9 on the right). Btw: Yellow always wins. After playing all 10 cards, the points are collected. There is a schema for calculation. Every guess you made wrongly, gives -5 points. Every guess you did correctly, gives positive points.'
+    );">gameplay info</button>
+    <button id="start" onclick="init();">start</button>
+    <input type="number" id="playerCount" title="players" min="3" max="5" value="3" />
+    
 
        <h3 id="status1"></h1>
         <h3 id="status2"></h1> 
@@ -207,10 +211,6 @@
             
     
         async function init() {
-
-            playerCards.length = 0;
-            playerTricks.length = 0;
-
             $("status1").text();
             $("status2").text();
             const playerCount = Number($("#playerCount").val());
