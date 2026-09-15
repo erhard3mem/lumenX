@@ -9,7 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
-    <style>
+    <style>        
+    hr {
+        margin-top:30px;
+        margin-bottom:30px;
+    }
         body {
             font-family: "Archivo Black", sans-serif;
             /*font-weight: 400;*/
@@ -18,9 +22,9 @@
             margin: 0 auto;
             background-color: #E5E5F7;
             opacity: 1;
-            background-image:  radial-gradient(25% 50%, #b6b9ff 98%, transparent), radial-gradient(25% 50%, #E5E5F7 98%, transparent), repeating-conic-gradient(#9fa3ff 0 25%, #E5E5F7 0 50%);
+           /* background-image:  radial-gradient(25% 50%, #b6b9ff 98%, transparent), radial-gradient(25% 50%, #E5E5F7 98%, transparent), repeating-conic-gradient(#9fa3ff 0 25%, #E5E5F7 0 50%);
             background-position: 30px 0, 0 0, 0 0;
-            background-size: 60px 30px, 60px 30px, 60px 60px;
+            background-size: 60px 30px, 60px 30px, 60px 60px; */
             
         }
         #deck {
@@ -30,13 +34,30 @@
             margin-right:auto;
             margin-left:auto;            
         }
-        .card {
+       /* .card {
             float:left;
             margin:5px;
             padding:20px;
             height:80px;
             width:30px;
-        }
+        }*/
+
+.card {
+    float: left;
+    margin: 4px;
+    padding: 0;
+    height: 64px;
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--lumen-border-strong);
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--lumen-text);
+}
         #cardTooltip {
             position: absolute;
             display: none;
@@ -123,7 +144,7 @@
 
 
     <button id="info" onclick="alert(
-        'Every player has 10 cards containing randomly selected cards from 6 colors with value 1 to 12. Before the 1st round starts, every player has to guess how many tricks he is making, without seeing the values of the own cards. Player 2 made the first trick, so it’s his round and choice. He now plays card 6, red with value 8. I have to stick to the played color and select one card from my deck (there is only one choice left - it’s card 9 on the right). Btw: Yellow always wins. After playing all 10 cards, the points are collected. There is a schema for calculation. Every guess you made wrongly, gives -5 points. Every guess you did correctly, gives positive points.'
+        'Every player (you are player 0) has 10 cards containing randomly selected cards from 6 colors with value 1 to 12. Before the 1st round starts, every player has to guess how many tricks he is making, without seeing the values of the own cards. Player 2 made the first trick, so it’s his round and choice. He now plays card 6, red with value 8. I have to stick to the played color and select one card from my deck (there is only one choice left - it’s card 9 on the right). Btw: Yellow always wins. After playing all 10 cards, the points are collected. There is a schema for calculation. Every guess you made wrongly, gives -5 points. Every guess you did correctly, gives positive points.'
     );">gameplay info</button>
     <button id="start" onclick="init();">start</button>
     <input type="number" id="playerCount" title="players" min="3" max="5" value="3" />
@@ -151,7 +172,7 @@
 
     <script>
         const Color = { "Yellow": 0, "Green": 1, "Blue": 2, "Red": 3, "Purple": 4 };        
-        const colorMap = ["yellow", "green", "blue", "red", "purple"];
+        const colorMap = ["#FFD700", "green", "blue", "red", "purple"];
         const playerCards = [];
         const playerPoints = [];
         const playerTricks = [];
@@ -252,6 +273,7 @@
                 }
 
                 if(!playerDescription) {
+                    $deck.append("<hr />");
                     $deck.append("<h3>Player "+currentPlayer+"</h3>"); 
                     const cg = document.guesses!=undefined ? document.guesses[currentPlayer].guess : "-";
                 //    debugger
@@ -264,7 +286,8 @@
 
                 const $card = $("<div>", {
                     class: "card" + (isHidden ? " card-hidden" : ""),
-                    style: `background-color:${bgColor}`,
+                    //style: `background-color:${bgColor}`,
+                    style: `border:2px solid ${bgColor}; border-radius:3px; color: ${bgColor}`,
                     text: isHidden ? "" : card.value
                 });
                 $card.attr("data-player",currentPlayer);
@@ -358,9 +381,9 @@
 
                                     const playerStarts = lastRoundWinner > -1 ? lastRoundWinner : randomInt(0, players - 1);
                                     if(playerStarts == 0)
-                                        $("#status1").text("You start.");
+                                        $("#status1").text("Your turn.");
                                     else 
-                                        $("#status1").text("");
+                                        $("#status1").text("Player "+playerStarts+"'s turn...");
                                     console.log("playerStarts:",playerStarts)
 
                                     let startCard = 0;
@@ -373,7 +396,8 @@
                                    
                                     
                                    // $("#status1").text("Player "+playerStarts+" begins... with card "+startCard);
-                                    $(".card[data-player='"+playerStarts+"'][data-index="+startCard+"]").css("border","7px dotted black");
+                                    $(".card[data-player='"+playerStarts+"'][data-index="+startCard+"]").css("border","7px dotted black");                                    
+                                    //$("h3:contains('Player "+playerStarts+"')").text("Player "+playerStarts+"'s turn");
                                     console.log("startCard:",startCard);
 
                                     
@@ -489,7 +513,8 @@
                                             const bgColor = colorMap[initCardPlayed[0].color];
                                             const $card = $("<div>", {
                                                 class: "card",
-                                                style: `background-color:${bgColor}; font-size:13px`,
+                                               // style: `background-color:${bgColor}; font-size:13px`,
+                                               style: `border:2px solid ${bgColor}; border-radius:3px; color: ${bgColor}; font-size:10px;text-align:center`,
                                                 text: `Player ${initCardPlayed[0].player} value ${initCardPlayed[0].value}`
                                             });
                                             $("#turn").append($card) 
@@ -499,7 +524,8 @@
                                             const bgColor = colorMap[cardPlayedCard.color];
                                             const $card = $("<div>", {
                                                 class: "card",
-                                                style: `background-color:${bgColor}; font-size:13px`,
+                                                //style: `background-color:${bgColor}; font-size:13px`,
+                                                style: `border:2px solid ${bgColor}; border-radius:3px; color: ${bgColor}; font-size:10px;text-align:center`,
                                                 text: `Player ${cardPlayedCard.player} value ${cardPlayedCard.value}`
                                             });
                                             $("#turn").append($card) 
