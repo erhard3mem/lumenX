@@ -113,9 +113,64 @@
             transition: width 3s linear;
         }
         #guessPopup {
-            margin:30px auto;            
-            top:0px;
-        }
+    border: 0.5px solid #d8d6d0;
+    border-radius: 12px;
+    padding: 24px 28px;
+    width: 280px;
+    margin: auto;
+    color: #2c2c2a;
+}
+
+#guessPopup::backdrop {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.popup-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #2c2c2a;
+    margin-bottom: 16px;
+}
+
+#guessPopup input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    border: 0.5px solid #d8d6d0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.popup-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.popup-actions button {
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 0.5px solid #b4b2a9;
+    background: transparent;
+    color: #2c2c2a;
+}
+
+.popup-actions button:hover {
+    background: #f5f4f0;
+}
+
+.popup-actions button.primary {
+    background: #2c2c2a;
+    color: #fff;
+    border: none;
+}
+
+.popup-actions button.primary:hover {
+    background: #444441;
+}
         #main {
             width: 900px;
             padding:30px;
@@ -123,6 +178,83 @@
             background-color: white;
             margin-top:20px;
         }
+
+        #infoPopup {
+    border: 0.5px solid #d8d6d0;
+    border-radius: 12px;
+    padding: 24px 28px;
+    width: 340px;
+    margin: auto;
+}
+
+#infoPopup::backdrop {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.alert-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #2c2c2a;
+    margin-bottom: 10px;
+}
+
+.alert-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #5f5e5a;
+    margin-bottom: 20px;
+}
+
+.alert-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.alert-actions button {
+    background: #2c2c2a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.alert-actions button:hover {
+    background: #444441;
+}
+
+#start,
+#info {
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    margin: 10px 8px 10px 0;
+}
+
+#start {
+    background: #2c2c2a;
+    color: #fff;
+    border: none;
+}
+
+#start:hover {
+    background: #444441;
+}
+
+#info {
+    background: transparent;
+    color: #2c2c2a;
+    border: 0.5px solid #b4b2a9;
+}
+
+#info:hover {
+    background: #f5f4f0;
+}
+.guessBox { 
+    margin-bottom:20px;
+}
     </style>
     <script src='https://code.jquery.com/jquery-4.0.0.min.js'></script>
 </head>
@@ -133,19 +265,29 @@
 
     <dialog id="guessPopup">
         <form method="dialog">
-            <label for="numberInput">Guess your number of tricks:</label><br>
-            <input type="number" id="numberInput" min="1" required autofocus /><br><br>
-            <button type="submit" value="ok">OK</button>
-            <button type="button" id="cancelBtn">Cancel</button>
+            <div class="popup-title">Guess your number of tricks</div>
+            <input type="number" id="numberInput" min="1" required autofocus placeholder="e.g. 3" />
+            <div class="popup-actions">
+                <button type="button" id="cancelBtn">Cancel</button>
+                <button type="submit" value="ok" class="primary">OK</button>
+            </div>
         </form>
     </dialog>
 
+    <dialog id="infoPopup">
+        <div class="alert-title">Gameplay info</div>
+        <div class="alert-body">
+            Every player (you are player 0) has 10 cards containing randomly selected cards from 6 colors with value 1 to 12. Before the 1st round starts, every player has to guess how many tricks he is making, without seeing the values of the own cards. Player 2 made the first trick, so it's his round and choice. He now plays card 6, red with value 8. I have to stick to the played color and select one card from my deck (there is only one choice left - it's card 9 on the right). Btw: Yellow always wins. After playing all 10 cards, the points are collected. There is a schema for calculation. Every guess you made wrongly, gives -5 points. Every guess you did correctly, gives positive points.
+        </div>
+        <div class="alert-actions">
+            <button id="infoOkBtn">Got it</button>
+        </div>
+    </dialog>
+
+
     <h1 id="header">LUMENX</h1>
-
-
-    <button id="info" onclick="alert(
-        'Every player (you are player 0) has 10 cards containing randomly selected cards from 6 colors with value 1 to 12. Before the 1st round starts, every player has to guess how many tricks he is making, without seeing the values of the own cards. Player 2 made the first trick, so it’s his round and choice. He now plays card 6, red with value 8. I have to stick to the played color and select one card from my deck (there is only one choice left - it’s card 9 on the right). Btw: Yellow always wins. After playing all 10 cards, the points are collected. There is a schema for calculation. Every guess you made wrongly, gives -5 points. Every guess you did correctly, gives positive points.'
-    );">gameplay info</button>
+    
+    <button id="info" onclick="document.getElementById('infoPopup').showModal();">gameplay info</button>
     <button id="start" onclick="init();">start</button>
     <input type="number" id="playerCount" title="players" min="3" max="5" value="3" />
     
@@ -692,7 +834,9 @@
                 });
             }
 
-       
+            document.getElementById('infoOkBtn').addEventListener('click', () => {
+                document.getElementById('infoPopup').close();
+            });
 
     </script>
     
