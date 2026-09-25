@@ -119,6 +119,7 @@
     width: 280px;
     margin: auto;
     color: #2c2c2a;
+    top:-70%;
 }
 
 #guessPopup::backdrop {
@@ -498,6 +499,7 @@
                             const orderedCards = document.cards;
                             for (let g = 0; g < games; g++) 
                             {
+                                guesses.length = 0; // reset guesses for each game
                                 let lastRoundWinner = -1;
                                 for (let i = 0; i < rounds; i++) {                                   
 
